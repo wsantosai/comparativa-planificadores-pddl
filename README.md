@@ -35,24 +35,67 @@ actividad3/
 
 - Python 3.11+
 - [uv](https://docs.astral.sh/uv/) (gestor de paquetes)
-- Docker (para Fast Downward)
+- Docker Desktop (para Fast Downward)
+
+## Configuracion de Docker
+
+Fast Downward se ejecuta dentro de un contenedor Docker basado en Ubuntu. Es necesario instalar Docker Desktop antes de ejecutar los experimentos de Fast Downward.
+
+### 1. Instalar Docker Desktop
+
+- **macOS**: Descargar desde https://www.docker.com/products/docker-desktop/ e instalar. En Apple Silicon (M1/M2/M3/M4) la imagen se ejecuta con emulacion x86 automaticamente via Rosetta.
+- **Windows**: Descargar Docker Desktop desde la misma URL. Requiere WSL2 habilitado.
+- **Linux**: Instalar Docker Engine siguiendo https://docs.docker.com/engine/install/
+
+### 2. Verificar instalacion
+
+```bash
+docker --version
+# Docker version 28.x.x
+
+docker run --rm hello-world
+# Deberia mostrar "Hello from Docker!"
+```
+
+### 3. Descargar imagen de Fast Downward
+
+```bash
+docker pull aibasel/downward:latest
+```
+
+La imagen ocupa aproximadamente 500 MB. Contiene el planificador Fast Downward precompilado sobre Ubuntu.
+
+### 4. Verificar que funciona
+
+```bash
+# Prueba rapida con un problema simple
+docker run --rm -v "$(pwd)/domains:/data:ro" aibasel/downward \
+  --alias lama-first \
+  /data/blocksworld/domain.pddl \
+  /data/blocksworld/instances/instance-4.pddl
+```
+
+Deberia mostrar `Solution found!` con un plan de 12 pasos.
+
+> **Nota:** Cada ejecucion de Docker tiene un overhead de ~2 segundos por la inicializacion del contenedor. Los tiempos reportados en el articulo incluyen este overhead. El script `run_fast_downward.py` limita cada contenedor a 4 GB de memoria (`--memory=4g`).
 
 ## Ejecucion
 
 ```bash
-# Instalar dependencias
+# 1. Instalar dependencias Python (pyperplan, matplotlib, pandas, etc.)
 uv sync
 
-# Descargar imagen de Fast Downward
-docker pull aibasel/downward:latest
-
-# Ejecutar planificadores
+# 2. Ejecutar pyperplan (no requiere Docker)
 uv run python src/run_pyperplan.py
+
+# 3. Ejecutar Fast Downward (requiere Docker corriendo)
 uv run python src/run_fast_downward.py
 
-# Generar tablas y figuras
+# 4. Generar tablas y figuras
 uv run python src/analyze_results.py
 ```
+
+Los scripts ejecutan los planificadores en paralelo (6 workers para pyperplan, 4 para Fast Downward) con timeouts de 60s y 120s respectivamente.
 
 ## Resultados principales
 
